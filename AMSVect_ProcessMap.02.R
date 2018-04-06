@@ -1,0 +1,105 @@
+
+
+###### Set working machine
+machine = "Lenovo"
+
+###### Set region to be processed
+region = "Europe"
+
+###### Set machine specifications
+if (machine == "Lenovo") {
+  setwd("M:/public/Fuhrer_Hunziker")
+  map.collection.folder <- paste("M:/public/Fuhrer_Hunziker/Maps/", region, sep="")
+  output.collection.folder <- paste("M:/public/Fuhrer_Hunziker/Output/", region, sep="")
+  input.folder <- "M:/public/Fuhrer_Hunziker/"
+  OS <- "Win"
+  cores = 4
+  library(doSNOW) 
+} else if (machine == "pakin") {
+  setwd("Y:/")
+  map.collection.folder <- "/icr/home/hunzikp/Projects/HTND/Maps"
+  output.collection.folder <- paste("Y:/Maps", region, sep="")
+  input.folder <- "Y:/"
+  OS <- "Win"
+  cores = 24
+  library(doSNOW)
+} 
+
+
+###### Load libraries
+library(rgdal)
+library(raster)
+library(foreach)
+
+
+###### Load map.list
+map.list.df <- read.csv(paste(input.folder, "Input/MapIndex/", sub(" ", "", region), "_maplist.csv", sep=""), stringsAsFactors = FALSE)
+map.list <- map.list.df$name[map.list.df$process]
+
+
+######  Iterate through maps and process them
+for (m in 1:length(map.list)) {
+
+  map.name <- map.list[m]
+  
+  ###### Load entire map
+  bil.path <- paste(map.collection.folder, "/", map.name, "/", map.name, "-WGS84.bil", sep="")
+  if (file.exists(bil.path)) {
+    full.map <- stack(bil.path)
+  } else {
+    tiff.path <- paste(map.collection.folder, "/", map.name, "/", map.name, "-WGS84.tiff", sep="")
+    full.map <- stack(tiff.path)
+  }
+  
+  ###### Partition map
+  source("R Code/AMSVect_ImagePartitioner_20140421.R")
+  map.part.list <- partitionImage(full.map, (ceiling(nrow(full.map)/3)), 0)
+  map.part.df <- getPartitionInfo(map.part.list)
+  
+  
+  ###### Save partitions as .grd file and .jpg image
+  source("R Code/AMSVect_SaveFiles_20130604.R")
+  
+  foldername.vec <- vector("character", length(map.part.list))
+  for (p in 1:length(map.part.list)) {
+  	foldername <- paste(output.collection.folder, "/", map.name, "/", "partition_", p, sep="")
+  	foldername.vec[p] <- foldername
+  	filename <- paste(map.name, "_", p, sep="")
+  	saveFile(map.part.list[[p]], filename, foldername)
+  	jpeg(filename = paste(foldername, "/", filename, ".jpg", sep=""), width = ncol(map.part.list[[p]]), height = nrow(map.part.list[[p]]), units = "px", pointsize = 12, quality = 100)
+  	plotRGB(map.part.list[[p]])
+  	dev.off()
+  }
+  
+  
+  ###### Load and proces map partitions (multi core)
+  source(paste(input.folder, "R Code/AMSVect_Main_20140507.R", sep=""))
+  
+  select.partitions <- c(1:length(map.part.list))
+  if (OS == "Win") {
+    cl <- makeCluster(cores)
+    registerDoSNOW(cl)
+  } else {
+    registerDoMC(cores)
+  }
+  
+  foreach(i=1:length(select.partitions)) %dopar% {
+    p <- select.partitions[i]
+    output.folder <- paste(output.collection.folder, "/", map.name, "/", "partition_", p, sep="")
+    partition.name <- paste(map.name, "_", p, sep="")
+    library(raster)
+    partition.map <- stack(paste(output.folder, "/", partition.name, ".grd", sep=""))
+    processPartition(partition.map, output.folder, partition.name, input.folder)
+    print("Done.")
+  } 
+  
+  
+  ##### Combine vectorized partitions and make network
+  source(paste(input.folder, "R Code/AMSVect_CombinePartitions_20140426.R", sep=""))
+  map.combined <- combinePartitions(select.partitions, output.collection.folder, map.name)
+  map.sldf <- map.combined[[1]]
+  map.raster <- map.combined[[2]]
+  output.folder <- paste(output.collection.folder, "/", map.name, sep="")
+  makeNetwork(inputlines.sldf=map.sldf, inputraster=map.raster, output.folder, input.folder, map.name, OS=OS, cores=cores)
+
+}
