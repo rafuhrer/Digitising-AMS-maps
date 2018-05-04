@@ -1,17 +1,17 @@
 
 
 ###### Set working machine
-machine = "hunzikp"
+machine = "gdip"
 
 ###### Set region to be processed
 region = "Europe"
 
 ###### Set machine specifications
 if (machine == "pakin") {
-  setwd("D:/Projects/HTND")
-  map.collection.folder <- paste("D:/Projects/HTND Local/AMS Road Vectorization/Maps/", region, sep="")
-  output.collection.folder <- paste("D:/Projects/HTND Local/AMS Road Vectorization/Output/", region, sep="")
-  input.folder <- "D:/Projects/HTND/"
+  setwd("")
+  map.collection.folder <- paste("", region, sep="")
+  output.collection.folder <- paste("", region, sep="")
+  input.folder <- ""
   OS <- "Win"
   cores = 8
   library(doSNOW) 
@@ -22,6 +22,14 @@ if (machine == "pakin") {
   input.folder <- "/home/hunzikp/Projects/amsvec_europe/input"
   OS <- "UNIX"
   cores = 6
+  library(doMC)
+} else if (machine == "gdip") {
+  setwd("/home/philipp/Projects/amsvec_europe/Digitising-AMS-maps")
+  map.collection.folder <- "/home/philipp/Projects/amsvec_europe/shared/maps"
+  output.collection.folder <- "/home/philipp/Projects/amsvec_europe/output"
+  input.folder <- "/home/philipp/Projects/amsvec_europe/input"
+  OS <- "UNIX"
+  cores = 10
   library(doMC)
 }
 

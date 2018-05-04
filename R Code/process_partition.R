@@ -113,7 +113,8 @@ processPartition <- function(partition.map, output.folder, partition.name, input
 	
 	###### Load PostGIS DB handler functions and prepare schema
 	source("R Code/pg_handler.R")
-  con <- getPGConn("gisdb", "5432", "localhost", "hunzikp", "teilchen")
+  # con <- getPGConn("gisdb", "5432", "localhost", "hunzikp", "teilchen")
+	con <- getPGConn("amsvec", "5432", "icr-s02.ethz.ch", 'admin', 'hNo7Yoo')
 	schemaname <- tolower(gsub("-", "_", partition.name))
 	dbCreateSchema(con, schemaname)
   
@@ -221,7 +222,7 @@ makeNetwork <- function(inputlines.sldf, inputraster, output.folder, input.folde
   
   ###### Load PostGIS DB handler functions and prepare schema
   source("R Code/pg_handler.R")
-  con <- getPGConn("growup", "5432", "cederman.ethz.ch", "admin", "hNo7Yoo")
+  con <- getPGConn("amsvec", "5432", "icr-s02.ethz.ch", 'admin', 'hNo7Yoo')
   schemaname <- tolower(gsub("-", "_", map.name))
   dbCreateSchema(con, schemaname)
   
