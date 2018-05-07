@@ -48,6 +48,8 @@ processPartition <- function(partition.map, output.folder, partition.name, input
 	  red.svm <- classifyPixels(partition.map, gauss.ml.fit)
 	  # Save output
 	  saveFile(red.svm, "red", output.folder)
+	  # Replace na values
+	  red.svm[is.na(red.svm)] <- 0
 	}
 
 	print("Extracted road pixels.")

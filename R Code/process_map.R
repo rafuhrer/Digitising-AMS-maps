@@ -25,7 +25,7 @@ if (machine == "pakin") {
   library(doMC)
 } else if (machine == "gdip") {
   setwd("/home/philipp/Projects/amsvec_europe/Digitising-AMS-maps")
-  map.collection.folder <- "/home/philipp/Projects/amsvec_europe/shared/maps"
+  map.collection.folder <- "/home/philipp/Projects/amsvec_europe/maps"
   output.collection.folder <- "/home/philipp/Projects/amsvec_europe/output"
   input.folder <- "/home/philipp/Projects/amsvec_europe/input"
   OS <- "UNIX"
@@ -97,6 +97,7 @@ for (m in 1:length(map.list)) {
     
     library(raster)
     partition.map <- stack(paste(output.folder, "/", partition.name, ".grd", sep=""))
+    partition.map[is.na(partition.map)] <- 255
     
     processPartition(partition.map, output.folder, partition.name, input.folder)
     print("Done.")
