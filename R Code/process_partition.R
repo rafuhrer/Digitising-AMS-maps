@@ -291,7 +291,8 @@ makeNetwork <- function(inputlines.sldf, inputraster, output.folder, input.folde
 	saveFile(classified.sldf, "classified", output.folder)
 	
   # Connect classified lines
-  connected.sldf <- connectClassified(classified.sldf, map.raster, im.th=10, w=3, buffer=c(250), clustersize=c(0))  
+  connected.sldf <- connectClassified(inputlines.sldf = classified.sldf, inputraster = map.raster, 
+                                      im.th = 10, w = 3, buffer = c(250), clustersize = c(0))  
   
   # Save image of classified lines
 	jpeg(filename = paste(output.folder, "/", "classified.jpg", sep=""), width = ncol(inputraster), height = nrow(inputraster), units = "px", pointsize = 12, quality = 100)
