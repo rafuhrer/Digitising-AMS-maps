@@ -1,4 +1,4 @@
-﻿/**********************************************************************************************
+/**********************************************************************************************
 RETURN TABLE WITH LINES BROKEN AT INTERSECTIONS
 
 Author:		Philipp Hunziker (hunziker@icr.gess.ethz.ch)
@@ -41,7 +41,7 @@ DROP INDEX IF EXISTS intersection_gix_SCHEMANAME;
 CREATE INDEX intersection_gix_SCHEMANAME ON SCHEMANAME.intersectionPoints_0 USING GIST (intersection_geom);
 
 
-
+/**** The following doesn't work any more with Postgres 10, so we just ignore the line intersections
 -- Since the above query may also produce lines (if two input lines lie ontop of eachother), we use the
 -- start and end points of these line intersections as node break points
 DROP TABLE IF EXISTS SCHEMANAME.intersectionPoints_1;
@@ -57,6 +57,18 @@ SELECT
 		ELSE	intersection_geom
 	END AS intersection_points
 FROM	SCHEMANAME.intersectionPoints_0 ip;
+*****/
+
+DROP TABLE IF EXISTS SCHEMANAME.intersectionPoints_1;
+CREATE TABLE SCHEMANAME.intersectionPoints_1 AS
+SELECT
+	ip.lid,
+	ip.lid2,
+	ip.startpoint_geom,
+	ip.endpoint_geom,
+	ip. intersection_geom  AS intersection_points
+FROM	SCHEMANAME.intersectionPoints_0 ip
+WHERE GEOMETRYTYPE(ip.intersection_geom) != 'LINESTRING';
 
 DROP INDEX IF EXISTS intersection2_gix_SCHEMANAME;
 CREATE INDEX intersection2_gix_SCHEMANAME ON SCHEMANAME.intersectionPoints_1 USING GIST (intersection_points);
