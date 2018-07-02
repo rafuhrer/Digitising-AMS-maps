@@ -138,48 +138,50 @@ connectClassified <- function(inputlines.sldf, inputraster=NULL, im.th=10, w=3, 
     dyads.df <- dyads.df[order(dyads.df$dist),]
     
     # Iterate through vertex dyads and connect via closest path
-    for (i in 1:nrow(dyads.df)) {
-      pid1 <- dyads.df$pid[i]
-      pid2 <- dyads.df$pid2[i]
-      v1 <- V(newgraph)[as.character(V(newgraph)$name) == pid1]
-      v2 <- V(newgraph)[as.character(V(newgraph)$name) == pid2]
-      
-      # Calculate length of connected network for each candidate vertex
-      maingraph <- newgraph
-      maingraph <- delete.edges(maingraph, E(maingraph)[which(E(maingraph)$newsp==0)])
-      clusters <- clusters(maingraph)
-      cl1.id <- clusters$membership[V(maingraph)$name == pid1]
-      cl1.members <- which(clusters$membership == cl1.id)
-      cl1.v <- V(maingraph)[cl1.members]
-      cl1.e <- E(maingraph)[adj(cl1.v)]
-      cl1.length <- sum(cl1.e$weight)
-
-      cl2.id <- clusters$membership[V(maingraph)$name == pid2]
-      cl2.members <- which(clusters$membership == cl2.id)
-      cl2.v <- V(maingraph)[cl2.members]
-      cl2.e <- E(maingraph)[adj(cl2.v)]
-      cl2.length <- sum(cl2.e$weight)
-      
-      if (cl1.length > c & cl2.length > c) {
-        main.unconnected.dist <- shortest.paths(newgraph, v1, v2, weights=1-E(newgraph)$newsp)  # Are the candidate verteces connected via main roads?
-        main.unconnected <- ifelse(main.unconnected.dist > 0, TRUE, 0)
-        if (!main.unconnected){  # If there's a main road connection between the verteces: calculate candidate efficiency improvement
-          main.dist <- shortest.paths(newgraph, v1, v2, weights=ifelse(E(newgraph)$newsp == 1, E(newgraph)$weight, Inf))
-          alt.dist <- shortest.paths(newgraph, v1, v2, weights=E(newgraph)$weight)
-          if (alt.dist < Inf) {
-            im.ratio <- main.dist/alt.dist
+    if (nrow(dyads.df) > 0) {
+      for (i in 1:nrow(dyads.df)) {
+        pid1 <- dyads.df$pid[i]
+        pid2 <- dyads.df$pid2[i]
+        v1 <- V(newgraph)[as.character(V(newgraph)$name) == pid1]
+        v2 <- V(newgraph)[as.character(V(newgraph)$name) == pid2]
+        
+        # Calculate length of connected network for each candidate vertex
+        maingraph <- newgraph
+        maingraph <- delete.edges(maingraph, E(maingraph)[which(E(maingraph)$newsp==0)])
+        clusters <- clusters(maingraph)
+        cl1.id <- clusters$membership[V(maingraph)$name == pid1]
+        cl1.members <- which(clusters$membership == cl1.id)
+        cl1.v <- V(maingraph)[cl1.members]
+        cl1.e <- E(maingraph)[adj(cl1.v)]
+        cl1.length <- sum(cl1.e$weight)
+  
+        cl2.id <- clusters$membership[V(maingraph)$name == pid2]
+        cl2.members <- which(clusters$membership == cl2.id)
+        cl2.v <- V(maingraph)[cl2.members]
+        cl2.e <- E(maingraph)[adj(cl2.v)]
+        cl2.length <- sum(cl2.e$weight)
+        
+        if (cl1.length > c & cl2.length > c) {
+          main.unconnected.dist <- shortest.paths(newgraph, v1, v2, weights=1-E(newgraph)$newsp)  # Are the candidate verteces connected via main roads?
+          main.unconnected <- ifelse(main.unconnected.dist > 0, TRUE, 0)
+          if (!main.unconnected){  # If there's a main road connection between the verteces: calculate candidate efficiency improvement
+            main.dist <- shortest.paths(newgraph, v1, v2, weights=ifelse(E(newgraph)$newsp == 1, E(newgraph)$weight, Inf))
+            alt.dist <- shortest.paths(newgraph, v1, v2, weights=E(newgraph)$weight)
+            if (alt.dist < Inf) {
+              im.ratio <- main.dist/alt.dist
+            } else {
+              im.ratio <- 0
+            }
           } else {
-            im.ratio <- 0
+            im.ratio <- Inf
           }
-        } else {
-          im.ratio <- Inf
-        }
-        if (im.ratio > im.th) {
-          cand.path <- get.shortest.paths(newgraph, v1, v2, weights=E(newgraph)$weight*((1-E(newgraph)$stateprob)^w), output="epath")
-          # Use mixture between state probabilities and distance as weights for calculating shortest paths
-          if (length(cand.path$epath) > 0) {
-            cand.edges <- E(newgraph)[unlist(cand.path$epath)]
-            newgraph <- set.edge.attribute(newgraph, "newsp", index=cand.edges, 1)
+          if (im.ratio > im.th) {
+            cand.path <- get.shortest.paths(newgraph, v1, v2, weights=E(newgraph)$weight*((1-E(newgraph)$stateprob)^w), output="epath")
+            # Use mixture between state probabilities and distance as weights for calculating shortest paths
+            if (length(cand.path$epath) > 0) {
+              cand.edges <- E(newgraph)[unlist(cand.path$epath)]
+              newgraph <- set.edge.attribute(newgraph, "newsp", index=cand.edges, 1)
+            }
           }
         }
       }
